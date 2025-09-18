@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es" data-bs-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cinema Tickets (Python)</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom">
+  <div class="container">
+    <a class="navbar-brand fw-semibold" href="/">CinemAQP 🎬</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="/">Inicio</a></li>
+        <li class="nav-item"><a class="nav-link" href="http://localhost:8000/docs" target="_blank">...</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<main class="container container-narrow py-4">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert {{ 'alert-success' if category=='ok' else 'alert-warning' }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="row g-4">
+    <div class="col-12 col-lg-5">
+      <div class="card card-soft">
+        <div class="card-header">
+          <h5 class="mb-0">Comprar tickets</h5>
+        </div>
+        <div class="card-body">
+          <form action="{{ url_for('buy') }}" method="post" class="vstack gap-3">
+            <div>
+              <label class="form-label">Función</label>
+              <select required class="form-select" name="screening_id">
+                <option value="">-- seleccionar --</option>
+                {% for s in screenings %}
+                  <option value="{{ s.id }}">
+                    {{ s.show_time | replace('T',' ') | replace('Z','') }} · {{ s.movie }} · S/.{{ s.price }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Cliente</label>
+              <input required class="form-control" name="customer_name" placeholder="Tu nombre">
+            </div>
+            <div>
+              <label class="form-label">Cantidad</label>
+              <input type="number" min="1" class="form-control" name="quantity" value="1">
+            </div>
+            <div class="d-grid">
+              <button class="btn btn-primary btn-rounded">Reservar</button>
+            </div>
+          </form>
+        </div>
+        <div class="card-footer small text-muted">
+          Selecciona la función, ingresa tu nombre y confirma la compra.
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-7">
+      <div class="card card-soft mb-4">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h5 class="mb-0">Películas</h5>
+          <span class="badge rounded-pill text-bg-secondary">{{ movies|length }}</span>
+        </div>
+        <div class="card-body">
+          <div class="row row-cols-1 row-cols-md-2 g-3">
+            {% for m in movies %}
+              <div class="col">
+                <div class="border rounded p-3 h-100">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <strong>{{ m.title }}</strong>
+                    <span class="badge badge-soft">{{ m.duration_minutes }} min</span>
+                  </div>
+                  {% if m.description %}
+                    <div class="text-secondary small mt-2">{{ m.description }}</div>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-soft">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h5 class="mb-0">Funciones</h5>
+          <span class="badge rounded-pill text-bg-secondary">{{ screenings|length }}</span>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+              <thead>
+                <tr>
+                  <th>Fecha y hora</th>
+                  <th>Película</th>
+                  <th class="text-end">Precio</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in screenings %}
+                <tr>
+                  <td>{{ s.show_time | replace('T',' ') | replace('Z','') }}</td>
+                  <td><strong>{{ s.movie }}</strong></td>
+                  <td class="text-end">S/. {{ s.price }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card-soft mt-4">
+    <div class="card-header d-flex align-items-center justify-content-between">
+      <h5 class="mb-0">Tickets reservados/vendidos</h5>
+      <span class="badge rounded-pill text-bg-secondary">{{ tickets|length }}</span>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover mb-0 align-middle">
+          <thead>
+            <tr>
+              <th>ID</th><th>Cliente</th><th>Cantidad</th><th>Película</th><th>Hora</th><th>Precio</th><th>Fecha compra</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in tickets %}
+            <tr>
+              <td>{{ t.id }}</td>
+              <td>{{ t.customer_name }}</td>
+              <td>{{ t.quantity }}</td>
+              <td>{{ t.movie }}</td>
+              <td>{{ t.show_time | replace('T',' ') | replace('Z','') }}</td>
+              <td>S/. {{ t.price }}</td>
+              <td>{{ t.purchased_at | replace('T',' ') | replace('Z','') }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="container container-narrow py-4 text-center small">
+  Hecho con Flask + FastAPI + PostgreSQL · Docker Compose · <a href="http://localhost:8000/docs" target="_blank">API</a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
