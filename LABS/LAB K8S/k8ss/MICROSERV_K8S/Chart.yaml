@@ -1,0 +1,7 @@
+
+apiVersion: v2
+name: cinema-ms
+description: Cinema microservices on Kubernetes (Postgres + Envoy + Ingress + HPA)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

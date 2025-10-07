@@ -1,0 +1,57 @@
+
+namespace: cinema-ms
+
+ingress:
+  host: "18.219.155.87.sslip.io"   # p.ej. "18-117-136-10.sslip.io" para paralelo
+
+postgres:
+  image: postgres:16-alpine
+  password: "cinema"
+  storageClassName: ""
+  storage: 5Gi
+
+frontend:
+  image:
+    repository: mnifla/cinema-frontend
+    tag: "1.0.0"
+  replicas: 2
+  resources:
+    requests: { cpu: "100m", memory: "128Mi" }
+    limits:   { cpu: "300m", memory: "256Mi" }
+  env:
+    BACKEND_BASE_URL: "http://api-gateway:8080/api"
+
+catalog:
+  image:
+    repository: mnifla/catalog-service
+    tag: "1.0.0"
+  replicas: 2
+  resources:
+    requests: { cpu: "100m", memory: "128Mi" }
+    limits:   { cpu: "300m", memory: "256Mi" }
+
+showtime:
+  image:
+    repository: mnifla/showtime-service
+    tag: "1.0.0"
+  replicas: 2
+  resources:
+    requests: { cpu: "100m", memory: "128Mi" }
+    limits:   { cpu: "300m", memory: "256Mi" }
+
+booking:
+  image:
+    repository: mnifla/booking-service
+    tag: "1.0.0"
+  replicas: 2
+  resources:
+    requests: { cpu: "100m", memory: "128Mi" }
+    limits:   { cpu: "300m", memory: "256Mi" }
+
+apiGateway:
+  enabled: true
+  image: envoyproxy/envoy:v1.31-latest
+  replicas: 1
+  resources:
+    requests: { cpu: "100m", memory: "128Mi" }
+    limits:   { cpu: "300m", memory: "256Mi" }

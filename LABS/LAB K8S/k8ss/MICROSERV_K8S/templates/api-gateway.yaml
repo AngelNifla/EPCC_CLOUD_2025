@@ -1,0 +1,50 @@
+
+{{- if .Values.apiGateway.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: {{ .Values.namespace }}
+  labels: { app: api-gateway }
+spec:
+  type: ClusterIP
+  selector: { app: api-gateway }
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: {{ .Values.namespace }}
+  labels: { app: api-gateway }
+spec:
+  replicas: {{ .Values.apiGateway.replicas }}
+  selector:
+    matchLabels: { app: api-gateway }
+  template:
+    metadata:
+      labels: { app: api-gateway }
+      annotations:
+        linkerd.io/inject: enabled
+    spec:
+      containers:
+        - name: envoy
+          image: {{ .Values.apiGateway.image }}
+          args: ["-c", "/etc/envoy/envoy.yaml", "--log-level", "info"]
+          ports: [ { containerPort: 8080 } ]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/envoy
+          resources:
+{{ toYaml .Values.apiGateway.resources | indent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: api-gateway-config
+            items:
+              - key: envoy.yaml
+                path: envoy.yaml
+{{- end }}

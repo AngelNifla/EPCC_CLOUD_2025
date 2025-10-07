@@ -1,0 +1,72 @@
+
+{{- if .Values.apiGateway.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-gateway-config
+  namespace: {{ .Values.namespace }}
+data:
+  envoy.yaml: |
+    static_resources:
+      listeners:
+      - name: listener_0
+        address:
+          socket_address: { address: 0.0.0.0, port_value: 8080 }
+        filter_chains:
+        - filters:
+          - name: envoy.filters.network.http_connection_manager
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+              stat_prefix: ingress_http
+              route_config:
+                name: local_route
+                virtual_hosts:
+                - name: backend
+                  domains: ["*"]
+                  routes:
+                  - match: { prefix: "/api/movies" }
+                    route:  { cluster: catalog_svc }
+                  - match: { prefix: "/api/screenings" }
+                    route:  { cluster: showtime_svc }
+                  - match: { prefix: "/api/tickets" }
+                    route:  { cluster: booking_svc }
+              http_filters:
+              - name: envoy.filters.http.router
+      clusters:
+      - name: catalog_svc
+        connect_timeout: 0.25s
+        type: STRICT_DNS
+        load_assignment:
+          cluster_name: catalog_svc
+          endpoints:
+          - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: catalog.{{ .Values.namespace }}.svc.cluster.local
+                    port_value: 8000
+      - name: showtime_svc
+        connect_timeout: 0.25s
+        type: STRICT_DNS
+        load_assignment:
+          cluster_name: showtime_svc
+          endpoints:
+          - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: showtime.{{ .Values.namespace }}.svc.cluster.local
+                    port_value: 8000
+      - name: booking_svc
+        connect_timeout: 0.25s
+        type: STRICT_DNS
+        load_assignment:
+          cluster_name: booking_svc
+          endpoints:
+          - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: booking.{{ .Values.namespace }}.svc.cluster.local
+                    port_value: 8000
+{{- end }}

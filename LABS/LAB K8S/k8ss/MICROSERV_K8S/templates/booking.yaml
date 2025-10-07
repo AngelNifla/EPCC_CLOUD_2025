@@ -1,0 +1,87 @@
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: booking
+  namespace: {{ .Values.namespace }}
+  labels: { app: booking }
+spec:
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: http
+  selector:
+    app: booking
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: booking
+  namespace: {{ .Values.namespace }}
+  labels: { app: booking }
+spec:
+  replicas: {{ .Values.booking.replicas }}
+  selector:
+    matchLabels: { app: booking }
+  template:
+    metadata:
+      labels: { app: booking }
+      annotations:
+        linkerd.io/inject: enabled
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values: ["booking"]
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - name: booking
+          image: {{ .Values.booking.image.repository }}:{{ .Values.booking.image.tag }}
+          imagePullPolicy: IfNotPresent
+          ports: [ { containerPort: 8000 } ]
+          env:
+            - name: DB_HOST
+              value: postgres.{{ .Values.namespace }}.svc.cluster.local
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "cinema"
+            - name: DB_USER
+              value: "booking_user"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+          readinessProbe:
+            httpGet: { path: "/health", port: 8000 }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+{{ toYaml .Values.booking.resources | indent 12 }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: booking
+  namespace: {{ .Values.namespace }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: booking
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60

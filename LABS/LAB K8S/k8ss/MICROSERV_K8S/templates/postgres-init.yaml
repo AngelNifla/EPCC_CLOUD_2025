@@ -1,0 +1,46 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  namespace: {{ .Values.namespace }}
+data:
+  init.sql: |
+    CREATE DATABASE IF NOT EXISTS cinema;
+    CREATE TABLE IF NOT EXISTS movies (
+      id SERIAL PRIMARY KEY,
+      title TEXT,
+      genre TEXT,
+      year INT
+    );
+    CREATE TABLE IF NOT EXISTS screenings (
+      id SERIAL PRIMARY KEY,
+      movie_id INT REFERENCES movies(id),
+      starts_at TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS tickets (
+      id SERIAL PRIMARY KEY,
+      screening_id INT REFERENCES screenings(id),
+      seat TEXT,
+      buyer TEXT
+    );
+    DO $$ BEGIN
+      CREATE ROLE catalog_user LOGIN PASSWORD 'cinema';
+    EXCEPTION WHEN duplicate_object THEN
+      RAISE NOTICE 'catalog_user exists';
+    END $$;
+    DO $$ BEGIN
+      CREATE ROLE showtime_user LOGIN PASSWORD 'cinema';
+    EXCEPTION WHEN duplicate_object THEN
+      RAISE NOTICE 'showtime_user exists';
+    END $$;
+    DO $$ BEGIN
+      CREATE ROLE booking_user LOGIN PASSWORD 'cinema';
+    EXCEPTION WHEN duplicate_object THEN
+      RAISE NOTICE 'booking_user exists';
+    END $$;
+    GRANT CONNECT ON DATABASE cinema TO catalog_user, showtime_user, booking_user;
+    GRANT USAGE ON SCHEMA public TO catalog_user, showtime_user, booking_user;
+    GRANT SELECT ON movies TO catalog_user, showtime_user, booking_user;
+    GRANT SELECT ON screenings TO catalog_user, showtime_user, booking_user;
+    GRANT SELECT, INSERT ON tickets TO booking_user;
