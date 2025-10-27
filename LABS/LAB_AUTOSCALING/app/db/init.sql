@@ -1,0 +1,32 @@
+CREATE TABLE IF NOT EXISTS movies (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT,
+  duration_minutes INT NOT NULL DEFAULT 90
+);
+
+CREATE TABLE IF NOT EXISTS screenings (
+  id SERIAL PRIMARY KEY,
+  movie_id INT NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+  show_time TIMESTAMP NOT NULL,
+  price NUMERIC(10,2) NOT NULL DEFAULT 15.00
+);
+
+CREATE TABLE IF NOT EXISTS tickets (
+  id SERIAL PRIMARY KEY,
+  screening_id INT NOT NULL REFERENCES screenings(id) ON DELETE CASCADE,
+  customer_name TEXT NOT NULL,
+  quantity INT NOT NULL CHECK (quantity > 0),
+  purchased_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO movies (title, description, duration_minutes) VALUES
+('Inception', 'Ciencia ficción y sueños.', 148),
+('Interstellar', 'Viajes interestelares.', 169),
+('El Origen de Arequipa', 'Ficción local demo.', 102);
+
+INSERT INTO screenings (movie_id, show_time, price) VALUES
+(1, NOW() + INTERVAL '1 hour', 18.50),
+(1, NOW() + INTERVAL '4 hours', 18.50),
+(2, NOW() + INTERVAL '2 hours', 20.00),
+(3, NOW() + INTERVAL '3 hours', 15.00);

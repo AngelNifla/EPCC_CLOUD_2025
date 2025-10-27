@@ -1,0 +1,90 @@
+version: '3.9'
+services:
+  db:
+    build: ./db
+    container_name: cinema_db
+    environment:
+      POSTGRES_USER: cinema
+      POSTGRES_PASSWORD: cinema
+      POSTGRES_DB: cinema_ms
+    ports:
+      - "55432:5432"   # antes: "5432:5432"
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U cinema -d cinema']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  movies:
+    build: ./movies
+    container_name: movies_svc
+    environment:
+      DB_HOST: db
+      DB_PORT: '5432'
+      DB_USER: cinema
+      DB_PASSWORD: cinema
+      DB_NAME: cinema_ms
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8101:8000"    # antes: "8001:8000"
+
+  screenings:
+    build: ./screenings
+    container_name: screenings_svc
+    environment:
+      DB_HOST: db
+      DB_PORT: '5432'
+      DB_USER: cinema
+      DB_PASSWORD: cinema
+      DB_NAME: cinema_ms
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8102:8000"    # antes: "8002:8000"
+
+  tickets:
+    build: ./tickets
+    container_name: tickets_svc
+    environment:
+      DB_HOST: db
+      DB_PORT: '5432'
+      DB_USER: cinema
+      DB_PASSWORD: cinema
+      DB_NAME: cinema_ms
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8103:8000"    # antes: "8003:8000"
+
+  backend:
+    build: ./bff
+    container_name: cinema_bff
+    environment:
+      MOVIES_URL: http://movies:8000
+      SCREENINGS_URL: http://screenings:8000
+      TICKETS_URL: http://tickets:8000
+    depends_on:
+      movies:
+        condition: service_started
+      screenings:
+        condition: service_started
+      tickets:
+        condition: service_started
+    ports:
+      - "8100:8000"    # antes: "8000:8000"
+
+  frontend:
+    build: ./frontend
+    container_name: cinema_frontend
+    environment:
+      BACKEND_BASE_URL: http://backend:8000
+      FLASK_RUN_PORT: '8080'
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "8180:8080"    # antes: "8080:8080"
