@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Compra confirmada</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <h1>🎟 ¡Compra confirmada!</h1>
+  <p>Has comprado {{ qty }} entradas para <strong>{{ titulo }}</strong>.</p>
+  <a href="/">⬅ Volver al inicio</a>
+</body>
+</html>

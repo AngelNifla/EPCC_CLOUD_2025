@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Comprar entradas</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <h1>Comprar entradas para {{ funcion['titulo'] }}</h1>
+  <p>{{ funcion['fecha'] }} - {{ funcion['hora'] }} ({{ funcion['sala'] }})</p>
+  <p>Entradas disponibles: {{ funcion['stock'] }}</p>
+  {% if error %}
+    <p class="error">{{ error }}</p>
+  {% endif %}
+  <form method="post">
+    <label>Cantidad:</label>
+    <input type="number" name="cantidad" min="1" required>
+    <button type="submit">Confirmar compra</button>
+  </form>
+  <a href="/">⬅ Volver</a>
+</body>
+</html>
