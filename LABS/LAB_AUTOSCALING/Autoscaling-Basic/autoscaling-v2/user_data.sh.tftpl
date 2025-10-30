@@ -1,0 +1,54 @@
+#!/bin/bash
+set -xe
+
+dnf update -y
+if ! command -v python3 >/dev/null 2>&1; then dnf install -y python3; fi
+python3 -m ensurepip --upgrade || true
+python3 -m pip install --upgrade pip
+pip3 install flask gunicorn
+
+mkdir -p /opt/app
+cat > /opt/app/app.py <<'PY'
+from flask import Flask, request
+import time, math, socket
+app = Flask(__name__)
+
+@app.get("/")
+def root():
+    return {"service":"v2","status":"ok","host": socket.gethostname()}
+
+@app.get("/health")
+def health():
+    return {"ok": True}, 200
+
+@app.get("/burn")
+def burn():
+    # quema CPU por N ms para forzar autoscaling con carga
+    try:
+        ms = int(request.args.get("n", "${burn_ms}"))
+    except:
+        ms = ${burn_ms}
+    end = time.time() + (ms/1000.0)
+    x = 0.0
+    while time.time() < end:
+        x += math.sqrt(98765.4321)
+    return {"burn_ms": ms, "done": True}
+PY
+
+cat > /etc/systemd/system/v2.service <<UNIT
+[Unit]
+Description=V2 Flask via gunicorn
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/opt/app
+ExecStart=/usr/local/bin/gunicorn -w 4 -b 0.0.0.0:${server_port} app:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+
+systemctl daemon-reload
+systemctl enable --now v2.service
