@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>CinemAQP - Cartelera</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <h1>CinemaAQP 🎬</h1>
+  <div class="movies">
+    {% for m in movies %}
+      <div class="card">
+        <h2>{{ m['titulo'] }}</h2>
+        <p>{{ m['descripcion'] }}</p>
+        <a href="{{ url_for('movie', movie_id=m['id']) }}">Ver funciones</a>
+      </div>
+    {% endfor %}
+  </div>
+</body>
+</html>

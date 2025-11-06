@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ movie['titulo'] }} - Funciones</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <h1>{{ movie['titulo'] }}</h1>
+  <p>{{ movie['descripcion'] }}</p>
+  <table>
+    <tr><th>Fecha</th><th>Hora</th><th>Sala</th><th>Stock</th><th></th></tr>
+    {% for f in funciones %}
+    <tr>
+      <td>{{ f['fecha'] }}</td>
+      <td>{{ f['hora'] }}</td>
+      <td>{{ f['sala'] }}</td>
+      <td>{{ f['stock'] }}</td>
+      <td>
+        {% if f['stock'] > 0 %}
+          <a href="{{ url_for('checkout', funcion_id=f['id']) }}">Comprar</a>
+        {% else %}
+          Agotado
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  <a href="/">⬅ Volver al catálogo</a>
+</body>
+</html>
